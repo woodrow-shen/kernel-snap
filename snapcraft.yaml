@@ -1,0 +1,14 @@
+name: Generic amd64 kernel snap
+version: 1.0
+vendor: "Tim Gardner <tim.gardner@canonical.com>"
+summary: Build a kernel snap from the Ubuntu archive Debian package(s)
+description: This snap downloads and extracts from the archive kernel
+  binary the relevant bits required for a GRUB based install.
+icon: icon.png
+binaries:
+
+parts:
+    main:
+        plugin: make
+        source: .
+
