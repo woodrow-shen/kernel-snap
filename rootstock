@@ -1,0 +1,177 @@
+#!/bin/sh
+#
+#  Copyright (c) 2014 Canonical
+#
+#  Author: Oliver Grawert <ogra@canonical.com>
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+#  USA
+#
+
+set -e
+
+# needs 6.5GB free diskspace for building
+# TODO:
+#       - allow single deb to be injected
+
+export LC_ALL=C
+
+SUITE="xenial"
+ARCH="amd64"
+LINUX_FLAVOUR=linux-image-generic
+BOOTLOADER=
+EXTRA_PACKAGES="initramfs-tools-ubuntu-core xz-utils"
+PPAS=
+
+NOW=$(date +%Y%m%d)
+TAILPID=
+KEEP=
+
+
+[ ! $(which qemu-debootstrap) ] && echo "please install the qemu-user-static package" && exit 1
+
+cleanup()
+{
+	[ -n "$TAILPID" ] && kill -9 $TAILPID
+	if [ -e "$CHROOT" ]; then
+		umount $CHROOT/sys >/dev/null 2>&1 || true
+		umount $CHROOT/proc >/dev/null 2>&1 || true
+		if [ -e "$CHROOT/build.log" ]; then
+			LOG=./build-$NOW-$ARCH.log
+			cp $CHROOT/build.log $LOG
+		fi
+		[ -z "$KEEP" ] && rm -rf $CHROOT >/dev/null 2>&1 || true
+	fi
+}
+
+trap cleanup 0 1 2 3 9 15
+
+usage()
+{
+	echo "usage: $(basename $0)\n
+	-h|--help		this page
+	-a|--arch (i386|armhf)	pick an arch, default: armhf
+	-c|--clean		destroy the chroot and exit
+        -f|--flavour		linux flavour meta package (e.g., linux-image-generic)
+	-m|--mirror (url)	url to local mirror
+	-k|--keep-chroot	keep the build environment around for inspection
+	-p|--ppa (ppa url)	a ppa url in the form of ppa:user/ppaname
+	-s|--series		Ubuntu distro series
+	-b|--bootloader (grub|grub-efi-amd64|uboot)\n"
+	exit 1
+}
+
+SUDOARGS="$@"
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h|--help)
+			usage
+			;;
+		-a|--arch)
+			[ -n "$2" ] && ARCH=$2 shift || usage
+			;;
+		-b|--bootloader)
+			[ -n "$2" ] && BOOTLOADER=$2 shift || usage
+			;;
+		-c|--clean)
+			DO_CLEAN=1
+			;;
+		-f|--flavour)
+			[ -n "$2" ] && LINUX_FLAVOUR=$2 shift || usage
+			;;
+		-m|--mirror)
+			[ -n "$2" ] && MIRROR=$2 shift || usage
+			;;
+		-k|--keep-chroot)
+			KEEP=1
+			;;
+		-p|--ppa)
+			[ -n "$2" ] && PPAS="${PPAS} $2" shift || usage
+			;;
+		-s|--series)
+			[ -n "$2" ] && SUITE=$2 shift || usage
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift
+done
+
+case $ARCH in
+	i386|amd64)
+		MIRROR="${MIRROR:-http://archive.ubuntu.com/ubuntu}"
+		BOOTSTRAP_BIN="debootstrap --arch $ARCH --variant=minbase"
+		;;
+	armhf)
+		MIRROR="${MIRROR:-http://ports.ubuntu.com/ubuntu-ports}"
+		BOOTSTRAP_BIN="qemu-debootstrap --arch armhf --variant=minbase"
+		;;
+	*)
+		usage
+		;;
+esac
+
+[ $(id -u) -ne 0 ] && exec sudo $0 $SUDOARGS
+
+CHROOT=chroot
+
+[ ! -z "$DO_CLEAN" ] && rm -rf $CHROOT && exit 0
+
+mkdir -p $CHROOT
+touch $CHROOT/build.log
+tail -f $CHROOT/build.log &
+TAILPID=$!
+
+exec 3>&1 4>&2 >$CHROOT/build.log 2>&1
+
+do_chroot()
+{
+	ROOT="$1"
+	CMD="$2"
+	chroot $ROOT mount -t proc proc /proc
+	chroot $ROOT mount -t sysfs sys /sys
+	chroot $ROOT $CMD
+	chroot $ROOT umount /sys
+	chroot $ROOT umount /proc
+}
+
+add_ppa()
+{
+	PPA=$1
+	do_chroot $CHROOT "apt-add-repository -y $PPA"
+}
+
+build_chroot()
+{
+	$BOOTSTRAP_BIN --include=software-properties-common $SUITE $CHROOT $MIRROR
+	echo "deb $MIRROR $SUITE main universe" >$CHROOT/etc/apt/sources.list
+	echo "deb $MIRROR $SUITE-updates main universe" >>$CHROOT/etc/apt/sources.list
+	sudo mkdir -p $CHROOT/etc/initramfs-tools/conf.d
+	echo "COMPRESS=lzma" | sudo tee $CHROOT/etc/initramfs-tools/conf.d/snappy-device-tarball.conf
+	[ -z "$PPAS" ] || (for i in $PPAS; do add_ppa $i; done)
+	do_chroot $CHROOT "apt-get -y update"
+	do_chroot $CHROOT "apt-get -y -u dist-upgrade"
+	do_chroot $CHROOT "apt-get -y install $EXTRA_PACKAGES"
+}
+
+install_kernel()
+{
+	do_chroot $CHROOT "apt-get -y install $BOOTLOADER $LINUX_FLAVOUR"
+}
+
+build_chroot
+install_kernel
