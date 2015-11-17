@@ -162,6 +162,7 @@ build_chroot()
 	echo "deb $MIRROR $SUITE-updates main universe" >>$CHROOT/etc/apt/sources.list
 	sudo mkdir -p $CHROOT/etc/initramfs-tools/conf.d
 	echo "COMPRESS=lzma" | sudo tee $CHROOT/etc/initramfs-tools/conf.d/snappy-device-tarball.conf
+	echo squashfs | sudo tee -a $CHROOT/etc/initramfs-tools/modules
 	[ -z "$PPAS" ] || (for i in $PPAS; do add_ppa $i; done)
 	do_chroot $CHROOT "apt-get -y update"
 	do_chroot $CHROOT "apt-get -y -u dist-upgrade"
