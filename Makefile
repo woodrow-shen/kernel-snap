@@ -68,7 +68,7 @@ $(CHROOT)/etc/fstab:
 snap: clean $(CHROOT)/etc/fstab
 	#
 	sudo mkdir -p $(KERN)
-	sudo chown -R $(KERN)
+	sudo chown $(USER).$(USER) -R $(KERN)
 	mkdir -p $(META)
 	#
 	echo "The ubuntu-core $(ARCH) kernel snap" > $(README)
