@@ -97,6 +97,8 @@ snap: clean $(CHROOT)/etc/fstab
 	echo "firmware: lib/firmware" >> $(YAML)
 	#
 	sudo chroot $(CHROOT) snappy build --snapfs `basename $(KERN)`
+	sudo mv $(CHROOT)/*.snap .
+	sudo chown $(USER).$(USER) *.snap
 
 clean:
 	sudo rm -rf $(KERN) *.snap *.log
