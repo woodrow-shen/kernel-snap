@@ -41,6 +41,7 @@ KEEP=
 
 
 [ ! $(which qemu-debootstrap) ] && sudo apt-get install -y qemu-user-static
+[ ! -d /usr/share/debootstrap ] && sudo apt-get install -y debootstrap
 
 cleanup()
 {
