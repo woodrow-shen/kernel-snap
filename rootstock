@@ -32,7 +32,7 @@ SUITE="xenial"
 ARCH="amd64"
 LINUX_FLAVOUR=linux-image-generic
 BOOTLOADER=
-EXTRA_PACKAGES="initramfs-tools-ubuntu-core xz-utils"
+EXTRA_PACKAGES="initramfs-tools-ubuntu-core xz-utils ubuntu-snappy-cli"
 PPAS=
 
 NOW=$(date +%Y%m%d)
@@ -40,7 +40,7 @@ TAILPID=
 KEEP=
 
 
-[ ! $(which qemu-debootstrap) ] && echo "please install the qemu-user-static package" && exit 1
+[ ! $(which qemu-debootstrap) ] && sudo apt-get install -y qemu-user-static
 
 cleanup()
 {

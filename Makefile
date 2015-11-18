@@ -43,7 +43,8 @@ BOOTLOADER?=grub-efi
 ARCH?=amd64
 SUITE?=xenial
 
-KERN=kern
+CHROOT=chroot
+KERN=$(CHROOT)/kern
 META=$(KERN)/meta
 YAML=$(META)/package.yaml
 README=$(META)/readme.md
@@ -53,21 +54,12 @@ FIRMWARE=$(LIB)/firmware
 
 PPAS=$(foreach p, $(SNAPPY_PPA) $(MY_PPAS), -p $p )
 
-CHROOT=chroot
 BOOT_FILES = abi config initrd System vmlinuz
 LIB_FILES = modules firmware
 
-.PHONY: environment-dependencies snap
+.PHONY: snap
 
-all: environment-dependencies snap
-
-environment-dependencies:
-	@if ! lsb_release -r | egrep -q "16\.04"; \
-	then \
-		echo "You really want to do this build in a 16.04 (Xenial) development environment."; \
-		echo "You should also 'sudo apt-add-repository ppa:snappy-dev/image'."; \
-		exit 1; \
-	fi
+all: snap
 
 $(CHROOT)/etc/fstab:
 	sudo sh ./rootstock -a $(ARCH) -f $(LINUX_FLAVOUR) -m $(MIRROR) -s $(SUITE) -b $(BOOTLOADER) $(PPAS) -k
@@ -75,7 +67,8 @@ $(CHROOT)/etc/fstab:
 
 snap: clean $(CHROOT)/etc/fstab
 	#
-	mkdir -p $(KERN)
+	sudo mkdir -p $(KERN)
+	sudo chown -R $(KERN)
 	mkdir -p $(META)
 	#
 	echo "The ubuntu-core $(ARCH) kernel snap" > $(README)
@@ -103,7 +96,7 @@ snap: clean $(CHROOT)/etc/fstab
 	rsync -a $(CHROOT)/lib/firmware/ $(FIRMWARE)/
 	echo "firmware: lib/firmware" >> $(YAML)
 	#
-	snappy build --snapfs $(KERN)
+	sudo chroot $(CHROOT) snappy build --snapfs `basename $(KERN)`
 
 clean:
 	rm -rf $(KERN) *.snap *.log
