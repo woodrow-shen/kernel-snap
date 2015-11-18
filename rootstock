@@ -32,7 +32,7 @@ SUITE="xenial"
 ARCH="amd64"
 LINUX_FLAVOUR=linux-image-generic
 BOOTLOADER=
-EXTRA_PACKAGES="initramfs-tools-ubuntu-core xz-utils ubuntu-snappy-cli"
+EXTRA_PACKAGES="initramfs-tools-ubuntu-core xz-utils ubuntu-snappy-cli squashfs-tools"
 PPAS=
 
 NOW=$(date +%Y%m%d)
