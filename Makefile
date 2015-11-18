@@ -99,7 +99,7 @@ snap: clean $(CHROOT)/etc/fstab
 	sudo chroot $(CHROOT) snappy build --snapfs `basename $(KERN)`
 
 clean:
-	rm -rf $(KERN) *.snap *.log
+	sudo rm -rf $(KERN) *.snap *.log
 
 distclean: clean
 	sudo sh ./rootstock -c
