@@ -43,6 +43,7 @@ BOOTLOADER?=grub-efi
 ARCH?=amd64
 SUITE?=xenial
 
+CURRDIR=$(shell pwd)
 CHROOT=chroot
 KERN=$(CHROOT)/kern
 META=$(KERN)/meta
@@ -61,7 +62,21 @@ LIB_FILES = modules firmware
 
 all: snap
 
-$(CHROOT)/etc/fstab:
+#
+# Fetch the rootstock script from the master branch.
+# Dirty tricks done dirt cheap.
+#
+rootstock: ORIGIN=$(shell git remote show origin | grep "Fetch URL:" | sed 's/^.*Fetch URL://')
+rootstock:
+	rm -rf tmp
+	mkdir tmp
+	cd tmp; \
+	git clone $(ORIGIN) rootstock; \
+	cd rootstock; \
+	cp rootstock $(CURRDIR)
+	rm -rf tmp
+
+$(CHROOT)/etc/fstab: rootstock
 	sudo sh ./rootstock -a $(ARCH) -f $(LINUX_FLAVOUR) -m $(MIRROR) -s $(SUITE) -b $(BOOTLOADER) $(PPAS) -k
 	sudo chmod +r $(CHROOT)/boot/*
 
