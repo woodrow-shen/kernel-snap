@@ -76,11 +76,11 @@ rootstock:
 	cp rootstock $(CURRDIR)
 	rm -rf tmp
 
-$(CHROOT)/etc/fstab: rootstock
+build_chroot: rootstock
 	sudo sh ./rootstock -a $(ARCH) -f $(LINUX_FLAVOUR) -m $(MIRROR) -s $(SUITE) -b $(BOOTLOADER) $(PPAS) -k
 	sudo chmod +r $(CHROOT)/boot/*
 
-snap: clean $(CHROOT)/etc/fstab
+snap: clean build_chroot
 	#
 	sudo mkdir -p $(KERN)
 	sudo chown $(USER).$(USER) -R $(KERN)
