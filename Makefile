@@ -111,7 +111,7 @@ snap: clean $(CHROOT)/etc/fstab
 	rsync -a $(CHROOT)/lib/firmware/ $(FIRMWARE)/
 	echo "firmware: lib/firmware" >> $(YAML)
 	#
-	sudo chroot $(CHROOT) snappy build --snapfs `basename $(KERN)`
+	sudo chroot $(CHROOT) snappy build `basename $(KERN)`
 	sudo mv $(CHROOT)/*.snap .
 	sudo chown $(USER).$(USER) *.snap
 
