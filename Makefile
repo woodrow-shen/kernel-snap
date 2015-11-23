@@ -80,7 +80,8 @@ build_chroot: rootstock
 	sudo sh ./rootstock -a $(ARCH) -f $(LINUX_FLAVOUR) -m $(MIRROR) -s $(SUITE) -b $(BOOTLOADER) $(PPAS) -k
 	sudo chmod +r $(CHROOT)/boot/*
 
-snap: clean build_chroot
+snap: clean
+	$(MAKE) build_chroot
 	#
 	sudo mkdir -p $(KERN)
 	sudo chown $(USER).$(USER) -R $(KERN)
