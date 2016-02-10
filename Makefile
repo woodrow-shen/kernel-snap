@@ -47,7 +47,7 @@ CURRDIR=$(shell pwd)
 CHROOT=chroot
 KERN=$(CHROOT)/kern
 META=$(KERN)/meta
-YAML=$(META)/package.yaml
+YAML=$(META)/snap.yaml
 README=$(META)/readme.md
 LIB=$(KERN)/lib
 MODULES=$(LIB)/modules
@@ -87,11 +87,10 @@ snap: clean
 	sudo chown $(USER).$(USER) -R $(KERN)
 	mkdir -p $(META)
 	#
-	echo "The ubuntu-core $(ARCH) kernel snap" > $(README)
-	#
 	echo "name: ubuntu-kernel-$(ARCH)" > $(YAML)
 	echo "version: $(shell date '+%Y.%m.%d')" >> $(YAML)
-	echo "architecture: $(ARCH)" >> $(YAML)
+	echo "summary: The ubuntu-core $(ARCH) kernel snap" >> $(YAML)
+	echo "architectures: $(ARCH)" >> $(YAML)
 	echo "vendor: Canonical" >> $(YAML)
 	echo "type: kernel" >> $(YAML)
 	#
