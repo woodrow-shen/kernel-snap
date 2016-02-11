@@ -45,7 +45,8 @@ SUITE?=xenial
 
 CURRDIR=$(shell pwd)
 CHROOT=chroot
-KERN=$(CHROOT)/kern
+KDIR=kern
+KERN=$(KDIR)
 META=$(KERN)/meta
 YAML=$(META)/snap.yaml
 README=$(META)/readme.md
@@ -83,16 +84,15 @@ build_chroot: rootstock
 snap: clean
 	$(MAKE) build_chroot
 	#
-	sudo mkdir -p $(KERN)
-	sudo chown $(USER).$(USER) -R $(KERN)
+	mkdir -p $(KERN)
 	mkdir -p $(META)
 	#
 	echo "name: ubuntu-kernel-$(ARCH)" > $(YAML)
 	echo "version: $(shell date '+%Y.%m.%d')" >> $(YAML)
 	echo "summary: The ubuntu-core $(ARCH) kernel snap" >> $(YAML)
-	echo "architectures: $(ARCH)" >> $(YAML)
-	echo "vendor: Canonical" >> $(YAML)
+	echo "architectures: [$(ARCH)]" >> $(YAML)
 	echo "type: kernel" >> $(YAML)
+	echo "" >> $(YAML)
 	#
 	cp $(CHROOT)/boot/vmlinuz* $(KERN)
 	echo -n "kernel: " >> $(YAML)
@@ -111,9 +111,8 @@ snap: clean
 	rsync -a $(CHROOT)/lib/firmware/ $(FIRMWARE)/
 	echo "firmware: lib/firmware" >> $(YAML)
 	#
-	sudo chroot $(CHROOT) "cd $(KERN) && snappy build --squashfs `basename $(KERN)`"
-	sudo mv $(CHROOT)/$(KERN)/*.snap .
-	sudo chown $(USER).$(USER) *.snap
+	[ -f /usr/bin/mksquashfs ] || [ sudo apt-get install squashfs-tools ]
+	fakeroot snappy build --squashfs $(KERN)
 
 clean:
 	sudo rm -rf $(KERN) *.snap *.log
