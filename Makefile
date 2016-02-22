@@ -111,7 +111,7 @@ snap: clean
 	rsync -a $(CHROOT)/lib/firmware/ $(FIRMWARE)/
 	echo "firmware: lib/firmware" >> $(YAML)
 	#
-	[ -f /usr/bin/mksquashfs ] || [ sudo apt-get install squashfs-tools ]
+	[ -f /usr/bin/mksquashfs ] || sudo apt-get install squashfs-tools
 	fakeroot snappy build --squashfs $(KERN)
 
 clean:
